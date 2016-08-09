@@ -4,6 +4,7 @@
  * Electron のモジュールの読み込み
  */
 const electron = require('electron');
+const shell = electron.shell;
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 
@@ -17,10 +18,15 @@ require('electron-debug')();
  */
 let mainWindow;
 function createMainWindow() {
-  mainWindow = new BrowserWindow({width: 600, height: 400});
+  mainWindow = new BrowserWindow({width: 650, height: 450});
 
   // index.htmlを表示
   mainWindow.loadURL(`file://${__dirname}/index.html`);
+
+  mainWindow.webContents.on('new-window', (event, url) => {
+    event.preventDefault();
+    shell.openExternal(url);
+  })
 
   // デバッグするためのDevToolsを表示
   mainWindow.webContents.openDevTools();

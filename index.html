@@ -3,44 +3,109 @@
   <head>
 
     <meta charset="utf-8" />
-    <title>Electron BrowserSync Launcher</title>
+    <title>Electron Browsersync Launcher</title>
+
+    <link rel="stylesheet" href="./css/photon.min.css"  />
 
   </head>
   <body>
 
-    <input type="text" id="js-field-base-dir" name="baseDir" value="" placeholder="/path/to/dir" />
-    <button type="button" id="js-btn-launch">Launch BrowserSync</button>
+    <!--
+      photon-components:window
+    -->
+    <div class="window">
+      <div class="window-content">
 
-    <script>
-      const bs = require('browser-sync').create();
+        <!--
+          photon-components:pane
+        -->
+        <div class="pane-group">
+          <div class="pane-one-third  sidebar">
 
-      const fieldBaseDir = document.querySelector('#js-field-base-dir'),
-            btnLaunch = document.querySelector('#js-btn-launch');
+            <div class="padded-more  padded-bottom-less">
+              <img src="./logo-red.svg" />
+            </div>
 
-      /**
-       * btnLaunch クリック時の処理
-       */
-      btnLaunch.addEventListener('click', (event) => {
+            <nav class="nav-group">
+              <h5 class="nav-group-title">URL</h5>
+              <a class="nav-group-item  padded-horizontally" id="js-link--url-local" href="javascript:;">
+                <span class="icon  icon-popup"></span>
+                <span class="js-link--url-message">Not Available</span>
+              </a>
+              <a class="nav-group-item  padded-horizontally" id="js-link--url-external" href="javascript:;">
+                <span class="icon  icon-popup"></span>
+                <span class="js-link--url-message">Not Available</span>
+              </a>
+            </nav>
 
-        // browserSync のインスタンスがアクティブの時は停止し、
-        // そうでない時は起動する
-        if (browserSync.active) {
-          browserSync.exit();
+          </div>
+          <div class="pane">
 
-          btnLaunch.innerHTML = 'Launch BrowserSync';
-        }
-        else {
-          browserSync.init({
-            server: fieldBaseDir.value
-          });
+            <h3 class="padded-horizontally">
+              <span class="icon  icon-tools  padded-horizontally"></span>Settings
+            </h3>
 
-          btnLaunch.innerHTML = 'Stop BrowserSync';
-        }
+            <div class="padded-more  padded-top-less">
 
-        event.preventDefault();
-      });
+              <!--
+                photon-components:form
+              -->
+              <form>
 
-    </script>
+                <div class="form-group">
+                  <label>baseDir</label>
+                  <input class="form-control" type="text" id="js-field--base-dir" name="baseDir" value="" />
+                </div>
+
+                <div class="form-group">
+                  <label>files</label>
+                  <input class="form-control" type="text" id="js-field--files" name="files" value="" />
+                </div>
+
+                <div class="form-group  pull-left">
+                  <label>host</label>
+                  <input class="form-control" type="text" id="js-field--host" name="host" value="" />
+                </div>
+
+                <div class="form-group  pull-left  padded-horizontally-more">
+                  <label>port</label>
+                  <input class="form-control" type="text" id="js-field--port" name="port" value="" />
+                </div>
+
+                <div class="clearfix"></div>
+
+                <div class="checkbox">
+
+                  <label class="padded-horizontally">
+                    <input type="checkbox" id="js-field--https" name="https" value="0" /> https
+                  </label>
+
+                  <label class="padded-horizontally">
+                    <input type="checkbox" id="js-field--ui" name="ui" value="0" /> ui
+                  </label>
+
+                  <label class="padded-horizontally">
+                    <input type="checkbox" id="js-field--open" name="open" value="0" /> open
+                  </label>
+
+                </div>
+
+                <div class="form-actions">
+                  <button class="btn  btn-large  btn-primary" type="button" id="js-btn--launch">Launch Browsersync</button>
+                </div>
+
+              </form>
+
+            </div>
+
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
 
   </body>
 </html>

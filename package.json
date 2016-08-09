@@ -1,8 +1,8 @@
 {
   "name": "electron-browser-sync-launcher",
-  "productName": "ElectronBrowserSyncLauncher",
+  "productName": "ElectronBrowsersyncLauncher",
   "version": "0.0.0",
-  "description": "BrowserSync Launcher GUI by Electron.",
+  "description": "Browsersync Launcher GUI by Electron.",
   "license": "MIT",
   "repository": "/electron-browser-sync-launcher",
   "private": true,
@@ -16,8 +16,14 @@
   },
   "files": [
     "index.js",
+    "app.js",
     "index.html",
-    "index.css"
+    "logo-red.svg",
+    "fonts/photon-entypo.eot",
+    "fonts/photon-entypo.svg",
+    "fonts/photon-entypo.ttf",
+    "fonts/photon-entypo.woff",
+    "css/photon.min.css"
   ],
   "keywords": [
     "electron-app",
@@ -25,7 +31,8 @@
   ],
   "dependencies": {
     "browser-sync": "^2.14.0",
-    "electron-debug": "^1.0.0"
+    "electron-debug": "^1.0.0",
+    "escape-html": "^1.0.3"
   },
   "devDependencies": {
     "devtron": "^1.1.0",
