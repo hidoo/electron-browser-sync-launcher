@@ -1,0 +1,28 @@
+# -------------
+# git file
+# -------------
+
+.git export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+
+
+# -------------
+# editorconfig
+# -------------
+
+.editorconfig export-ignore
+
+
+# -------------
+# npm
+# -------------
+
+package.json export-ignore
+
+
+# -------------
+# readme
+# -------------
+
+README.md export-ignore

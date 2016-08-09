@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <meta charset="utf-8" />
+    <title>Electron BrowserSync Launcher</title>
+
+  </head>
+  <body>
+
+    <input type="text" id="js-field-base-dir" name="baseDir" value="" placeholder="/path/to/dir" />
+    <button type="button" id="js-btn-launch">Launch BrowserSync</button>
+
+    <script>
+      const bs = require('browser-sync').create();
+
+      const fieldBaseDir = document.querySelector('#js-field-base-dir'),
+            btnLaunch = document.querySelector('#js-btn-launch');
+
+      /**
+       * btnLaunch クリック時の処理
+       */
+      btnLaunch.addEventListener('click', (event) => {
+
+        // browserSync のインスタンスがアクティブの時は停止し、
+        // そうでない時は起動する
+        if (browserSync.active) {
+          browserSync.exit();
+
+          btnLaunch.innerHTML = 'Launch BrowserSync';
+        }
+        else {
+          browserSync.init({
+            server: fieldBaseDir.value
+          });
+
+          btnLaunch.innerHTML = 'Stop BrowserSync';
+        }
+
+        event.preventDefault();
+      });
+
+    </script>
+
+  </body>
+</html>
