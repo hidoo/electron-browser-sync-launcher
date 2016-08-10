@@ -11,14 +11,14 @@ const BrowserWindow = electron.BrowserWindow;
 /**
  * Electron のデバッグツールの使用の使用
  */
-require('electron-debug')();
+// require('electron-debug')();
 
 /**
  * 新しいウィンドウの生成
  */
 let mainWindow;
 function createMainWindow() {
-  mainWindow = new BrowserWindow({width: 650, height: 450});
+  mainWindow = new BrowserWindow({width: 720, height: 450});
 
   // index.htmlを表示
   mainWindow.loadURL(`file://${__dirname}/index.html`);
@@ -29,7 +29,7 @@ function createMainWindow() {
   })
 
   // デバッグするためのDevToolsを表示
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   // ウィンドウを閉じたら参照を破棄
   mainWindow.on('closed', () => {

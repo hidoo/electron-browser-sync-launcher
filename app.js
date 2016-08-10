@@ -15,7 +15,7 @@ const BROWSER_SYNC_OPTIONS = {
     directory: true,
     index: 'index.html'
   },
-  files: './**/*.{html,css,js,png,jpg,jpeg,gif,svg}',
+  files: '**/*.{html,css,js,png,jpg,jpeg,gif,svg}',
   host: '0.0.0.0',
   port: 8000,
   https: false,
@@ -37,6 +37,7 @@ const droppable = document.querySelector('#js-droppable'),
       fieldOpen = document.querySelector('#js-field--open'),
       linkUrlLocal = document.querySelector('#js-link--url-local'),
       linkUrlExternal = document.querySelector('#js-link--url-external'),
+      linkUrlUi = document.querySelector('#js-link--url-ui'),
       btnLaunch = document.querySelector('#js-btn--launch');
 
 // フィールドの配列の作成と、placeholder の初期値を設定
@@ -72,6 +73,12 @@ function handleClickBtnLaunch(event) {
     open: !!fieldOpen.checked || BROWSER_SYNC_OPTIONS.open
   };
 
+  // 監視対象のファイルは、ドキュメントルート直下に指定する
+  opts.files = `${opts.server.baseDir}/${opts.files}`;
+
+  // UI が有効な時はオプションを設定する
+  opts.ui = opts.ui ? {port: opts.port + 1} : false;
+
   // Browsersync のインスタンスがアクティブの時は停止し、
   // そうでない時は起動する
   if (bs.active) {
@@ -84,6 +91,9 @@ function handleClickBtnLaunch(event) {
     // リンクの非表示
     toogleLinkUrl(linkUrlLocal, null);
     toogleLinkUrl(linkUrlExternal, null);
+    if (opts.ui) {
+      toogleLinkUrl(linkUrlUi, null);
+    }
   }
   else {
     bs.init(opts, (...args) => {
@@ -96,6 +106,9 @@ function handleClickBtnLaunch(event) {
       // リンクの生成
       toogleLinkUrl(linkUrlLocal, `${opts.https ? 'https' : 'http'}://localhost:${opts.port}`);
       toogleLinkUrl(linkUrlExternal, `${opts.https ? 'https' : 'http'}://${opts.host}:${opts.port}`);
+      if (opts.ui) {
+        toogleLinkUrl(linkUrlUi, `${opts.https ? 'https' : 'http'}://localhost:${opts.ui.port}`);
+      }
     });
   }
 
@@ -121,7 +134,7 @@ function toogleLinkUrl(element, url) {
   else {
     element.setAttribute('href', 'javascript:;');
     element.removeAttribute('target');
-    element.querySelector('.js-link--url-message').textContent = 'Not Available';
+    element.querySelector('.js-link--url-message').textContent = '停止中';
   }
 
   return element;
@@ -139,11 +152,11 @@ function toggleBtnLaunch(element, active) {
   }
 
   if (active) {
-    element.textContent = 'Stop BrowserSync';
+    element.textContent = 'Browsersync を停止する';
     element.classList.add('btn-negative');
   }
   else {
-    element.textContent = 'Launch BrowserSync';
+    element.textContent = 'Browsersync を起動する';
     element.classList.remove('btn-negative');
   }
 

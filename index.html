@@ -25,21 +25,25 @@
           photon-components:pane
         -->
         <div class="pane-group">
-          <div class="pane-one-third  sidebar">
+          <div class="sidebar" style="width: 200px;">
 
             <div class="padded-more  padded-bottom-less">
               <img src="./logo-red.svg" />
             </div>
 
             <nav class="nav-group">
-              <h5 class="nav-group-title">URL</h5>
+              <h5 class="nav-group-title">表示確認用 URL</h5>
               <a class="nav-group-item  padded-horizontally" id="js-link--url-local" href="javascript:;">
-                <span class="icon  icon-popup"></span>
-                <span class="js-link--url-message">Not Available</span>
+                <span class="icon  icon-network"></span>
+                <span class="js-link--url-message">停止中</span>
               </a>
               <a class="nav-group-item  padded-horizontally" id="js-link--url-external" href="javascript:;">
-                <span class="icon  icon-popup"></span>
-                <span class="js-link--url-message">Not Available</span>
+                <span class="icon  icon icon-globe"></span>
+                <span class="js-link--url-message">停止中</span>
+              </a>
+              <a class="nav-group-item  padded-horizontally" id="js-link--url-ui" href="javascript:;">
+                <span class="icon  icon-cog"></span>
+                <span class="js-link--url-message">停止中</span>
               </a>
             </nav>
 
@@ -58,22 +62,22 @@
               <form>
 
                 <div class="form-group">
-                  <label>baseDir</label>
+                  <label>ディレクトリ（ドラッグ＆ドロップでも指定できます）</label>
                   <input class="form-control" type="text" id="js-field--base-dir" name="baseDir" value="" />
                 </div>
 
                 <div class="form-group">
-                  <label>files</label>
+                  <label>変更を監視するファイルの拡張子</label>
                   <input class="form-control" type="text" id="js-field--files" name="files" value="" />
                 </div>
 
                 <div class="form-group  pull-left">
-                  <label>host</label>
+                  <label>IP アドレス</label>
                   <input class="form-control" type="text" id="js-field--host" name="host" value="" />
                 </div>
 
                 <div class="form-group  pull-left  padded-horizontally-more">
-                  <label>port</label>
+                  <label>ポート番号</label>
                   <input class="form-control" type="text" id="js-field--port" name="port" value="" />
                 </div>
 
@@ -82,21 +86,21 @@
                 <div class="checkbox">
 
                   <label class="padded-horizontally">
-                    <input type="checkbox" id="js-field--https" name="https" value="0" /> https
+                    <input type="checkbox" id="js-field--https" name="https" value="0" /> https の有効化
                   </label>
 
                   <label class="padded-horizontally">
-                    <input type="checkbox" id="js-field--ui" name="ui" value="0" /> ui
+                    <input type="checkbox" id="js-field--ui" name="ui" value="0" /> UI の有効化
                   </label>
 
                   <label class="padded-horizontally">
-                    <input type="checkbox" id="js-field--open" name="open" value="0" /> open
+                    <input type="checkbox" id="js-field--open" name="open" value="0" /> ブラウザの自動起動の有効化
                   </label>
 
                 </div>
 
                 <div class="form-actions">
-                  <button class="btn  btn-large  btn-primary" type="button" id="js-btn--launch">Launch Browsersync</button>
+                  <button class="btn  btn-large  btn-primary" type="button" id="js-btn--launch">Browsersync を起動する</button>
                 </div>
 
               </form>
