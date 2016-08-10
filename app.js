@@ -3,7 +3,7 @@
 /**
  * モジュールのロード
  */
-const browserSync = require('browser-sync').create(),
+const bs = require('browser-sync').create(),
       escape = require('escape-html');
 
 /**
@@ -37,6 +37,8 @@ const fieldBaseDir = document.querySelector('#js-field--base-dir'),
       linkUrlExternal = document.querySelector('#js-link--url-external'),
       btnLaunch = document.querySelector('#js-btn--launch');
 
+// フィールドの配列の作成と、placeholder の初期値を設定
+const fields = [fieldBaseDir, fieldFiles, fieldHost, fieldPort, fieldHttps, fieldUi, fieldOpen];
 fieldBaseDir.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.server.baseDir);
 fieldFiles.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.files);
 fieldHost.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.host);
@@ -45,7 +47,14 @@ fieldPort.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.port);
 /**
  * btnLaunch クリック時の処理
  */
-btnLaunch.addEventListener('click', (event) => {
+btnLaunch.addEventListener('click', handleClickBtnLaunch);
+
+/**
+ * 起動ボタンクリック時の処理。イベントハンドラとして設定される
+ * @param  {DOMEvent} event イベント
+ * @return {void}
+ */
+function handleClickBtnLaunch(event) {
   const opts = {
     server: {
       baseDir: escape(fieldBaseDir.value) || BROWSER_SYNC_OPTIONS.server.baseDir,
@@ -60,42 +69,102 @@ btnLaunch.addEventListener('click', (event) => {
     open: !!fieldOpen.checked || BROWSER_SYNC_OPTIONS.open
   };
 
-  // browserSync のインスタンスがアクティブの時は停止し、
+  // Browsersync のインスタンスがアクティブの時は停止し、
   // そうでない時は起動する
-  if (browserSync.active) {
-    browserSync.exit();
+  if (bs.active) {
+    bs.exit();
 
-    // ボタンの見た目の変更
-    btnLaunch.innerHTML = 'Launch BrowserSync';
-    btnLaunch.classList.remove('btn-negative');
+    // ボタン・フィールドの見た目の変更
+    toggleBtnLaunch(btnLaunch, bs.active);
+    toggleFields(fields, bs.active);
 
     // リンクの非表示
-    linkUrlLocal.setAttribute('href', 'javascript:;');
-    linkUrlLocal.removeAttribute('target');
-    linkUrlLocal.querySelector('.js-link--url-message').innerHTML = 'Not Available';
-    linkUrlExternal.setAttribute('href', 'javascript:;');
-    linkUrlExternal.removeAttribute('target');
-    linkUrlExternal.querySelector('.js-link--url-message').innerHTML = 'Not Available';
+    toogleLinkUrl(linkUrlLocal, null);
+    toogleLinkUrl(linkUrlExternal, null);
   }
   else {
-    browserSync.init(opts, (...args) => {
+    bs.init(opts, (...args) => {
       console.log(args);
+
+      // ボタン・フィールドの見た目の変更
+      toggleBtnLaunch(btnLaunch, bs.active);
+      toggleFields(fields, bs.active);
+
+      // リンクの生成
+      toogleLinkUrl(linkUrlLocal, `${opts.https ? 'https' : 'http'}://localhost:${opts.port}`);
+      toogleLinkUrl(linkUrlExternal, `${opts.https ? 'https' : 'http'}://${opts.host}:${opts.port}`);
     });
-
-    // ボタンの見た目の変更
-    btnLaunch.innerHTML = 'Stop BrowserSync';
-    btnLaunch.classList.add('btn-negative');
-
-    // リンクの生成
-    let urlLocal = `${opts.https ? 'https' : 'http'}://localhost:${opts.port}`;
-    let urlExternal = `${opts.https ? 'https' : 'http'}://${opts.host}:${opts.port}`;
-    linkUrlLocal.setAttribute('href', urlLocal);
-    linkUrlLocal.setAttribute('target', '_blank');
-    linkUrlLocal.querySelector('.js-link--url-message').innerHTML = urlLocal;
-    linkUrlExternal.setAttribute('href', urlExternal);
-    linkUrlExternal.setAttribute('target', '_blank');
-    linkUrlExternal.querySelector('.js-link--url-message').innerHTML = urlExternal;
   }
 
   event.preventDefault();
-});
+}
+
+/**
+ * リンク表示の表示切り替え
+ * @param  {HTMLElement} element 対象の <a> 要素
+ * @param  {String} url リンク先の URL 文字列
+ * @return {Element}
+ */
+function toogleLinkUrl(element, url) {
+  if (!element) {
+    throw new Error(`"element" arg is required. (from toogleLinkUrl)`);
+  }
+
+  if (url) {
+    element.setAttribute('href', url);
+    element.setAttribute('target', '_blank');
+    element.querySelector('.js-link--url-message').textContent = url;
+  }
+  else {
+    element.setAttribute('href', 'javascript:;');
+    element.removeAttribute('target');
+    element.querySelector('.js-link--url-message').textContent = 'Not Available';
+  }
+
+  return element;
+}
+
+/**
+ * リンク表示の表示切り替え
+ * @param  {HTMLElement} element 対象の <button> 要素
+ * @param  {String} active Browsersync が起動中か否かの真偽値
+ * @return {Element}
+ */
+function toggleBtnLaunch(element, active) {
+  if (!element) {
+    throw new Error(`"element" arg is required. (from toggleBtnLaunch)`);
+  }
+
+  if (active) {
+    element.textContent = 'Stop BrowserSync';
+    element.classList.add('btn-negative');
+  }
+  else {
+    element.textContent = 'Launch BrowserSync';
+    element.classList.remove('btn-negative');
+  }
+
+  return element;
+}
+
+/**
+ * フィールドの表示切り替え
+ * @param  {Array} elements 対象のフィールド要素
+ * @param  {String} active Browsersync が起動中か否かの真偽値
+ * @return {Element}
+ */
+function toggleFields(elements, active) {
+  if (!elements[0]) {
+    throw new Error(`"elements" arg is required. (from toggleFields)`);
+  }
+
+  elements.forEach((element) => {
+
+    if (active) {
+      element.disabled = 'disabled';
+    }
+    else {
+      element.disabled = '';
+    }
+  });
+}
