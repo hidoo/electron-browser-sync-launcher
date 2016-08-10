@@ -26,7 +26,9 @@ const BROWSER_SYNC_OPTIONS = {
 /**
  * UI 要素の取得
  */
-const fieldBaseDir = document.querySelector('#js-field--base-dir'),
+const droppable = document.querySelector('#js-droppable'),
+      overlay = document.querySelector('#js-overlay'),
+      fieldBaseDir = document.querySelector('#js-field--base-dir'),
       fieldFiles = document.querySelector('#js-field--files'),
       fieldHost = document.querySelector('#js-field--host'),
       fieldPort = document.querySelector('#js-field--port'),
@@ -44,10 +46,11 @@ fieldFiles.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.files);
 fieldHost.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.host);
 fieldPort.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.port);
 
-/**
- * btnLaunch クリック時の処理
- */
+// btnLaunch クリック時の処理
 btnLaunch.addEventListener('click', handleClickBtnLaunch);
+
+// ドラッグ&ドロップの処理
+enableDragDropBaseDir();
 
 /**
  * 起動ボタンクリック時の処理。イベントハンドラとして設定される
@@ -167,4 +170,61 @@ function toggleFields(elements, active) {
       element.disabled = '';
     }
   });
+}
+
+/**
+ * ドラッグ＆ドロップでの baseDir 設定機能を有効にする
+ * @return {Void}
+ */
+function enableDragDropBaseDir() {
+
+  // 不要なイベントをキャンセル
+  droppable.addEventListener('dragenter', (event) => event.preventDefault());
+  droppable.addEventListener('dragend', (event) => event.preventDefault());
+
+  // ドラッグ開始時の処理
+  // オーバーレイを表示して、ドロップ可能な領域であることをフィードバックする
+  droppable.addEventListener('dragover', (event) => {
+    event.preventDefault();
+
+    if (bs.active) { return false; }
+
+    if (event.currentTarget === droppable) {
+      overlay.style.zIndex = 10000;
+      overlay.style.opacity = 1;
+    }
+  });
+
+  // ドロップ領域を離れた時の処理
+  // オーバーレイを非表示にして、ドロップ可能な領域外であることをフィードバックする
+  droppable.addEventListener('dragleave', (event) => {
+    event.preventDefault();
+
+    if (bs.active) { return false; }
+
+    if (event.target === overlay) {
+      overlay.style.zIndex = 0;
+      overlay.style.opacity = 0;
+    }
+  });
+
+  // ドロップ時の処理
+  // オーバーレイを非表示にして、ドロップされたオブジェクトを処理する
+  droppable.addEventListener('drop', (event) => {
+    const files = event.dataTransfer.files;
+
+    event.preventDefault();
+
+    if (bs.active) { return false; }
+
+    overlay.style.zIndex = 0;
+    overlay.style.opacity = 0;
+
+    // ファイルがない場合、
+    // ファイルがディレクトリではない場合は無視する
+    if (!files || !files[0]) { return false; }
+    if (files[0].type !== '') { return false; }
+
+    fieldBaseDir.value = files[0].path;
+  })
 }
