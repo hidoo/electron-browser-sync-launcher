@@ -3,45 +3,112 @@
   <head>
 
     <meta charset="utf-8" />
-    <title>Electron Browsersync Launcher</title>
+    <title>Browsersync Launcher</title>
 
+    <!--
+      PhotonKit のロード
+    -->
     <link rel="stylesheet" href="./css/photon.min.css"  />
+
+    <!--
+      ページ固有の CSS
+    -->
+    <style>
+      /**
+       * オーバーレイ
+       */
+      .overlay {
+        position: absolute;
+        z-index: 0;
+        top: 0;
+        bottom:0;
+        left: 0;
+        right: 0;
+        color: #fff;
+        background-color: rgba(0, 0, 0, 0.8);
+        opacity: 0;
+      }
+      .overlay__message {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        height: calc(60px + 10px + 3.2em);
+        margin: auto;
+        text-align: center;
+      }
+      .overlay__message__icon {
+        text-align: center;
+        line-height: 60px;
+        font-size: 60px;
+      }
+      .overlay__message__text {
+        display: block;
+        padding-top: 10px;
+        text-align: center;
+      }
+
+      /**
+       * ロゴ
+       */
+      .logo {
+        padding: 10px 10px 0;
+        text-align: center;
+      }
+      .logo__src {
+        width: 150px;
+        height: auto;
+      }
+
+      /**
+       * ヘルパー
+       */
+      .helper--width-200 {
+        width: 200px;
+      }
+    </style>
 
   </head>
   <body>
 
     <!--
-      photon-components:window
+      PhotonKit の window コンポーネント
     -->
     <div class="window" id="js-droppable">
 
-      <div id="js-overlay" style="opacity: 0; position: absolute; z-index: 0; top: 0; bottom:0; left: 0; right: 0; background-color: rgba(0, 0, 0, 0.8);">
-        <p class="text-center" style="color: #fff;">ここに Browsersync で表示するプロジェクトの<br />ディレクトリをドロップ</p>
+      <div class="overlay" id="js-overlay">
+        <p class="overlay__message">
+          <span class="overlay__message__icon  icon  icon-folder"></span>
+          <span class="overlay__message__text">ここに Browsersync で表示するプロジェクトの<br />ディレクトリをドロップ</span>
+        </p>
       </div>
 
       <div class="window-content">
 
         <!--
-          photon-components:pane
+          PhotonKit の pane コンポーネント
         -->
         <div class="pane-group">
-          <div class="sidebar" style="width: 200px;">
+          <div class="sidebar  helper--width-200">
 
-            <div class="padded-more  padded-bottom-less">
-              <img src="./logo-red.svg" />
+            <div class="logo">
+              <img class="logo__src" src="./logo-red.svg" draggable="false" />
             </div>
 
+            <!--
+              PhotonKit の nav-group コンポーネント
+            -->
             <nav class="nav-group">
               <h5 class="nav-group-title">表示確認用 URL</h5>
-              <a class="nav-group-item  padded-horizontally" id="js-link--url-local" href="javascript:;">
+              <a class="nav-group-item  padded-horizontally" id="js-link--url-local" draggable="false" href="javascript:;">
                 <span class="icon  icon-network"></span>
                 <span class="js-link--url-message">停止中</span>
               </a>
-              <a class="nav-group-item  padded-horizontally" id="js-link--url-external" href="javascript:;">
+              <a class="nav-group-item  padded-horizontally" id="js-link--url-external" draggable="false" href="javascript:;">
                 <span class="icon  icon icon-globe"></span>
                 <span class="js-link--url-message">停止中</span>
               </a>
-              <a class="nav-group-item  padded-horizontally" id="js-link--url-ui" href="javascript:;">
+              <a class="nav-group-item  padded-horizontally" id="js-link--url-ui" draggable="false" href="javascript:;">
                 <span class="icon  icon-cog"></span>
                 <span class="js-link--url-message">停止中</span>
               </a>
@@ -57,7 +124,7 @@
             <div class="padded-more  padded-top-less">
 
               <!--
-                photon-components:form
+                PhotonKit の form コンポーネント
               -->
               <form>
 
@@ -113,6 +180,9 @@
       </div>
     </div>
 
+    <!--
+      renderer プロセスの設定を読み込み
+    -->
     <script src="./renderer.js"></script>
 
   </body>
