@@ -3,7 +3,8 @@
 /**
  * モジュールのロード
  */
-const bs = require('browser-sync').create(),
+const os = require('os'),
+      bs = require('browser-sync').create(),
       escape = require('escape-html');
 
 /**
@@ -11,7 +12,7 @@ const bs = require('browser-sync').create(),
  */
 const BROWSER_SYNC_OPTIONS = {
   server: {
-    baseDir: './',
+    baseDir: os.homedir(),
     directory: true,
     index: 'index.html'
   },
