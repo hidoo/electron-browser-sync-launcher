@@ -3,12 +3,12 @@
 /**
  * Electron のモジュールの読み込み
  */
-const electron = require('electron');
-const shell = electron.shell;
-const app = electron.app;
-const BrowserWindow = electron.BrowserWindow;
-const ipc = electron.ipcMain;
-const dialog = electron.dialog;
+const electron = require('electron'),
+      shell = electron.shell,
+      app = electron.app,
+      ipc = electron.ipcMain,
+      dialog = electron.dialog,
+      BrowserWindow = electron.BrowserWindow;
 
 /**
  * Electron のデバッグツールの使用の使用
@@ -20,7 +20,12 @@ const dialog = electron.dialog;
  */
 let mainWindow;
 function createMainWindow() {
-  mainWindow = new BrowserWindow({width: 720, height: 450});
+  mainWindow = new BrowserWindow({
+    width: 780,
+    height: 500,
+    minWidth: 780,
+    minHeight: 500
+  });
 
   // index.htmlを表示
   mainWindow.loadURL(`file://${__dirname}/index.html`);
