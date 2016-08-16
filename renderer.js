@@ -10,23 +10,6 @@ const os = require('os'),
       escape = require('escape-html');
 
 /**
- * 定数：BrowserSync の起動オプション
- */
-const BROWSER_SYNC_OPTIONS = {
-  server: {
-    baseDir: os.homedir(),
-    directory: true,
-    index: 'index.html'
-  },
-  files: '**/*.{html,css,js,png,jpg,jpeg,gif,svg}',
-  host: '0.0.0.0',
-  port: 8000,
-  https: false,
-  ui: false,
-  open: false
-};
-
-/**
  * 定数：イベント
  * @type {String}
  */
@@ -42,22 +25,53 @@ const UI_LABEL_BTN_LAUNCH_END = 'Browsersync を停止する';
 const UI_LABEL_LINK_STOP = '停止中';
 
 /**
+ * 定数：Browsersync の起動オプション
+ */
+const BS_OPTIONS = {
+  server: {
+    baseDir: os.homedir(),
+    directory: true,
+    index: 'index.html'
+  },
+  files: '**/*.{html,css,js,png,jpg,jpeg,gif,svg}',
+  host: '0.0.0.0',
+  port: 8000,
+  https: false,
+  ui: false,
+  open: false
+};
+
+/**
+ * BrowsersyncLauncher の初期化オプション
+ */
+const BS_LAUNCHER_OPTIONS = {
+
+  // インスタンスの ID
+  id: ''
+};
+
+/**
  * @class BrowsersyncLauncher
  */
 class BrowsersyncLauncher extends EventEmitter {
 
   /**
    * コンストラクタ
+   * @param {BS_LAUNCHER_OPTIONS} options
    * @return {Void}
    */
-  constructor() {
+  constructor(options) {
     super();
+
+    const opts = Object.assign({}, BS_LAUNCHER_OPTIONS, options);
 
     /* +++++++++++++++
      *
      * プロパティの初期化
      *
      * +++++++++++++ */
+
+    this.id = opts.id;
 
     // BrowserSync のインスタンス
     this.bs = browsersync.create();
@@ -88,10 +102,13 @@ class BrowsersyncLauncher extends EventEmitter {
     };
 
     // フィールドの placeholder を設定
-    this.fields.baseDir.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.server.baseDir);
-    this.fields.files.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.files);
-    this.fields.host.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.host);
-    this.fields.port.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.port);
+    this.fields.baseDir.setAttribute('placeholder', BS_OPTIONS.server.baseDir);
+    this.fields.files.setAttribute('placeholder', BS_OPTIONS.files);
+    this.fields.host.setAttribute('placeholder', BS_OPTIONS.host);
+    this.fields.port.setAttribute('placeholder', BS_OPTIONS.port);
+
+    // フィールドの値を復元
+    this.restoreFieldsValue();
 
     /* +++++++++++++++
      *
@@ -105,6 +122,16 @@ class BrowsersyncLauncher extends EventEmitter {
       if (path) {
         this.fields.baseDir.value = path;
       }
+    });
+
+    // Browsersync の起動時に発生するイベントを監視して
+    // フィールドの値を localStorage に保存する
+    this.on(EVENT_BS_START, (newOpts) => {
+      const newOptsCache = Object.assign({}, newOpts);
+
+      // newOpts.files は baseDir と連結しているので、その部分を除去して保存する
+      newOptsCache.files = newOpts.files.replace(`${newOpts.server.baseDir}/`, '');
+      localStorage.setItem(`${this.id}_config`, JSON.stringify(newOptsCache));
     });
 
     // Browsersync の起動終了時に発生するイベントを監視して
@@ -292,7 +319,7 @@ class BrowsersyncLauncher extends EventEmitter {
     }
 
     btnLaunch.addEventListener('click', (event) => {
-      const newOpts = Object.assign({}, BROWSER_SYNC_OPTIONS),
+      const newOpts = Object.assign({}, BS_OPTIONS),
             baseDir = escape(this.fields.baseDir.value),
             files = escape(this.fields.files.value),
             host = escape(this.fields.host.value),
@@ -331,6 +358,31 @@ class BrowsersyncLauncher extends EventEmitter {
         });
       }
     });
+
+    return this;
+  }
+
+  /**
+   * フィールドの値を復元する
+   * @return {BrowsersyncLauncher}
+   */
+  restoreFieldsValue() {
+    const oldConfig = JSON.parse(localStorage.getItem(`${this.id}_config`)),
+          fields = this.fields;
+
+    if (oldConfig) {
+      Object.keys(fields).forEach((key) => {
+        const field = fields[key],
+              conf = key === 'baseDir' ? oldConfig.server[key] : oldConfig[key];
+
+        if (field.type === 'text') {
+          field.value = conf;
+        }
+        else {
+          field.checked = conf ? 'checked' : '';
+        }
+      });
+    }
 
     return this;
   }
