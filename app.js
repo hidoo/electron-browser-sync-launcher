@@ -4,6 +4,7 @@
  * モジュールのロード
  */
 const os = require('os'),
+      ipc = require('electron').ipcRenderer,
       bs = require('browser-sync').create(),
       escape = require('escape-html');
 
@@ -53,6 +54,9 @@ btnLaunch.addEventListener('click', handleClickBtnLaunch);
 
 // ドラッグ&ドロップの処理
 enableDragDropBaseDir();
+
+// ファイル選択ダイアログの処理
+enableSelectBaseDir();
 
 /**
  * 起動ボタンクリック時の処理。イベントハンドラとして設定される
@@ -241,4 +245,21 @@ function enableDragDropBaseDir() {
 
     fieldBaseDir.value = files[0].path;
   })
+}
+
+/**
+ * OS のファイル選択ダイアログでの baseDir 設定機能を有効にする
+ * @return {Void}
+ */
+function enableSelectBaseDir() {
+
+  // fieldBaseDir クリック時の処理
+  fieldBaseDir.addEventListener('click', (event) => {
+    ipc.send('open-file-dialog');
+  });
+
+  // ディレクトリが選択された時の処理
+  ipc.on('selected-directory', (event, files) => {
+    fieldBaseDir.value = files[0];
+  });
 }

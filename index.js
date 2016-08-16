@@ -7,6 +7,8 @@ const electron = require('electron');
 const shell = electron.shell;
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
+const ipc = electron.ipcMain;
+const dialog = electron.dialog;
 
 /**
  * Electron のデバッグツールの使用の使用
@@ -58,4 +60,18 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+/**
+ * ファイル選択ダイアログを開くイベントが発生した時の処理
+ * OS のファイル選択ダイアログを開き、ディレクトリが選択されたら、
+ * renderer プロセスにイベントを送信する
+ */
+ipc.on('open-file-dialog', (event) => {
+
+  dialog.showOpenDialog({ properties: ['openDirectory'] }, (files) => {
+    if (files) {
+      event.sender.send('selected-directory', files);
+    }
+  });
 });
