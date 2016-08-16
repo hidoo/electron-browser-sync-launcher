@@ -182,11 +182,11 @@ class BrowsersyncLauncher extends EventEmitter {
     // Browsersync の起動終了時に発生するイベントを監視して
     // ボタンの有効・無効を切り替える
     this.on(EVENT_BS_START, (newOpts) => {
-      this.uis.btnLaunch.textContent = UI_LABEL_BTN_LAUNCH_START;
+      this.uis.btnLaunch.textContent = UI_LABEL_BTN_LAUNCH_END;
       this.uis.btnLaunch.classList.add('btn-negative');
     });
     this.on(EVENT_BS_END, () => {
-      this.uis.btnLaunch.textContent = UI_LABEL_BTN_LAUNCH_END;
+      this.uis.btnLaunch.textContent = UI_LABEL_BTN_LAUNCH_START;
       this.uis.btnLaunch.classList.remove('btn-negative');
     });
 
