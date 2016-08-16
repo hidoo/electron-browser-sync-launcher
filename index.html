@@ -28,6 +28,10 @@
         background-color: rgba(0, 0, 0, 0.8);
         opacity: 0;
       }
+      .overlay.js-active {
+        z-index: 10000;
+        opacity: 1;
+      }
       .overlay__message {
         position: absolute;
         top: 0;
@@ -183,7 +187,10 @@
     <!--
       renderer プロセスの設定を読み込み
     -->
-    <script src="./renderer.js"></script>
+    <script>
+      const { BrowsersyncLauncher } = require('./renderer');
+      const launcher = new BrowsersyncLauncher();
+    </script>
 
   </body>
 </html>

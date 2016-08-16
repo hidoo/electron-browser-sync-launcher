@@ -5,7 +5,8 @@
  */
 const os = require('os'),
       ipc = require('electron').ipcRenderer,
-      bs = require('browser-sync').create(),
+      EventEmitter = require('events').EventEmitter,
+      browsersync = require('browser-sync'),
       escape = require('escape-html');
 
 /**
@@ -26,240 +27,316 @@ const BROWSER_SYNC_OPTIONS = {
 };
 
 /**
- * UI 要素の取得
+ * 定数：イベント
+ * @type {String}
  */
-const droppable = document.querySelector('#js-droppable'),
-      overlay = document.querySelector('#js-overlay'),
-      fieldBaseDir = document.querySelector('#js-field--base-dir'),
-      fieldFiles = document.querySelector('#js-field--files'),
-      fieldHost = document.querySelector('#js-field--host'),
-      fieldPort = document.querySelector('#js-field--port'),
-      fieldHttps = document.querySelector('#js-field--https'),
-      fieldUi = document.querySelector('#js-field--ui'),
-      fieldOpen = document.querySelector('#js-field--open'),
-      linkUrlLocal = document.querySelector('#js-link--url-local'),
-      linkUrlExternal = document.querySelector('#js-link--url-external'),
-      linkUrlUi = document.querySelector('#js-link--url-ui'),
-      btnLaunch = document.querySelector('#js-btn--launch');
-
-// フィールドの配列の作成と、placeholder の初期値を設定
-const fields = [fieldBaseDir, fieldFiles, fieldHost, fieldPort, fieldHttps, fieldUi, fieldOpen];
-fieldBaseDir.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.server.baseDir);
-fieldFiles.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.files);
-fieldHost.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.host);
-fieldPort.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.port);
-
-// btnLaunch クリック時の処理
-btnLaunch.addEventListener('click', handleClickBtnLaunch);
-
-// ドラッグ&ドロップの処理
-enableDragDropBaseDir();
-
-// ファイル選択ダイアログの処理
-enableSelectBaseDir();
+const EVENT_SELECTED_BASE_DIR = 'selected-base-dir';
+const EVENT_BS_START = 'bs-start';
+const EVENT_BS_END = 'bs-end';
 
 /**
- * 起動ボタンクリック時の処理。イベントハンドラとして設定される
- * @param  {DOMEvent} event イベント
- * @return {void}
+ * 定数：UI
  */
-function handleClickBtnLaunch(event) {
-  const opts = {
-    server: {
-      baseDir: escape(fieldBaseDir.value) || BROWSER_SYNC_OPTIONS.server.baseDir,
-      directory: BROWSER_SYNC_OPTIONS.server.directory,
-      index: BROWSER_SYNC_OPTIONS.server.index
-    },
-    files: escape(fieldFiles.value) || BROWSER_SYNC_OPTIONS.files,
-    host: escape(fieldHost.value) || BROWSER_SYNC_OPTIONS.host,
-    port: escape(fieldPort.value) || BROWSER_SYNC_OPTIONS.port,
-    https: !!fieldHttps.checked || BROWSER_SYNC_OPTIONS.https,
-    ui: !!fieldUi.checked || BROWSER_SYNC_OPTIONS.ui,
-    open: !!fieldOpen.checked || BROWSER_SYNC_OPTIONS.open
-  };
+const UI_LABEL_BTN_LAUNCH_START = 'Browsersync を起動する';
+const UI_LABEL_BTN_LAUNCH_END = 'Browsersync を停止する';
+const UI_LABEL_LINK_STOP = '停止中';
 
-  // 監視対象のファイルは、ドキュメントルート直下に指定する
-  opts.files = `${opts.server.baseDir}/${opts.files}`;
+/**
+ * @class BrowsersyncLauncher
+ */
+class BrowsersyncLauncher extends EventEmitter {
 
-  // UI が有効な時はオプションを設定する
-  opts.ui = opts.ui ? {port: opts.port + 1} : false;
+  /**
+   * コンストラクタ
+   * @return {Void}
+   */
+  constructor() {
+    super();
 
-  // Browsersync のインスタンスがアクティブの時は停止し、
-  // そうでない時は起動する
-  if (bs.active) {
-    bs.exit();
+    /* +++++++++++++++
+     *
+     * プロパティの初期化
+     *
+     * +++++++++++++ */
 
-    // ボタン・フィールドの見た目の変更
-    toggleBtnLaunch(btnLaunch, bs.active);
-    toggleFields(fields, bs.active);
+    // BrowserSync のインスタンス
+    this.bs = browsersync.create();
 
-    // リンクの非表示
-    toogleLinkUrl(linkUrlLocal, null);
-    toogleLinkUrl(linkUrlExternal, null);
-    if (opts.ui) {
-      toogleLinkUrl(linkUrlUi, null);
-    }
-  }
-  else {
-    bs.init(opts, (...args) => {
-      console.log(args);
+    // UI 要素
+    this.uis = {
+      droppable: document.getElementById('js-droppable'),
+      overlay: document.getElementById('js-overlay'),
+      btnLaunch: document.getElementById('js-btn--launch')
+    };
 
-      // ボタン・フィールドの見た目の変更
-      toggleBtnLaunch(btnLaunch, bs.active);
-      toggleFields(fields, bs.active);
+    // リンク要素
+    this.links = {
+      local: document.getElementById('js-link--url-local'),
+      external: document.getElementById('js-link--url-external'),
+      ui: document.getElementById('js-link--url-ui')
+    };
 
-      // リンクの生成
-      toogleLinkUrl(linkUrlLocal, `${opts.https ? 'https' : 'http'}://localhost:${opts.port}`);
-      toogleLinkUrl(linkUrlExternal, `${opts.https ? 'https' : 'http'}://${opts.host}:${opts.port}`);
-      if (opts.ui) {
-        toogleLinkUrl(linkUrlUi, `${opts.https ? 'https' : 'http'}://localhost:${opts.ui.port}`);
+    // フィールド要素
+    this.fields = {
+      baseDir: document.getElementById('js-field--base-dir'),
+      files: document.getElementById('js-field--files'),
+      host: document.getElementById('js-field--host'),
+      port: document.getElementById('js-field--port'),
+      https: document.getElementById('js-field--https'),
+      ui: document.getElementById('js-field--ui'),
+      open: document.getElementById('js-field--open')
+    };
+
+    // フィールドの placeholder を設定
+    this.fields.baseDir.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.server.baseDir);
+    this.fields.files.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.files);
+    this.fields.host.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.host);
+    this.fields.port.setAttribute('placeholder', BROWSER_SYNC_OPTIONS.port);
+
+    /* +++++++++++++++
+     *
+     * イベントの監視
+     *
+     * +++++++++++++ */
+
+    // baseDir が選択された際に発生するイベントを監視して
+    // フィールドの値を更新する
+    this.on(EVENT_SELECTED_BASE_DIR, (path) => {
+      if (path) {
+        this.fields.baseDir.value = path;
       }
     });
+
+    // Browsersync の起動終了時に発生するイベントを監視して
+    // フィールドの有効・無効を切り替える
+    this.on(EVENT_BS_START, (newOpts) => {
+      Object.keys(this.fields).forEach((key) => {
+        this.fields[key].disabled = 'disabled';
+      });
+    });
+    this.on(EVENT_BS_END, () => {
+      Object.keys(this.fields).forEach((key) => {
+        this.fields[key].disabled = '';
+      });
+    });
+
+    // Browsersync の起動終了時に発生するイベントを監視して
+    // リンクの値を切り替える
+    Object.keys(this.links).forEach((key) => {
+      const element = this.links[key];
+
+      this.on(EVENT_BS_START, (newOpts) => {
+        const host = key === 'external' ? newOpts.host : 'localhost',
+              port = newOpts.port,
+              protocol = newOpts.https ? 'https' : 'http';
+
+        let url = `${protocol}://${host}:${port}`;
+
+        // UI 用の URL の作成
+        // UI が有効な時だけ作成する
+        if (key === 'ui') {
+          if (!newOpts.ui) { return; }
+          else {
+            url = `http://${host}:${newOpts.ui.port}`;
+          }
+        }
+
+        element.setAttribute('href', url);
+        element.setAttribute('target', '_blank');
+        element.querySelector('.js-link--url-message').textContent = url;
+      });
+      this.on(EVENT_BS_END, () => {
+        element.setAttribute('href', 'javascript:;');
+        element.removeAttribute('target');
+        element.querySelector('.js-link--url-message').textContent = UI_LABEL_LINK_STOP;
+      });
+    });
+
+    // Browsersync の起動終了時に発生するイベントを監視して
+    // ボタンの有効・無効を切り替える
+    this.on(EVENT_BS_START, (newOpts) => {
+      this.uis.btnLaunch.textContent = UI_LABEL_BTN_LAUNCH_START;
+      this.uis.btnLaunch.classList.add('btn-negative');
+    });
+    this.on(EVENT_BS_END, () => {
+      this.uis.btnLaunch.textContent = UI_LABEL_BTN_LAUNCH_END;
+      this.uis.btnLaunch.classList.remove('btn-negative');
+    });
+
+    /* +++++++++++++++
+     *
+     * 機能の有効化
+     *
+     * +++++++++++++ */
+
+    this.enableBtnLaunch();
+    this.enableSelectBaseDir();
+    this.enableDragDropBaseDir();
   }
 
-  event.preventDefault();
-}
+  /**
+   * OS のファイル選択ダイアログでの baseDir 設定機能を有効にする
+   * @return {BrowsersyncLauncher}
+   */
+  enableSelectBaseDir() {
+    const fieldBaseDir = this.fields.baseDir;
 
-/**
- * リンク表示の表示切り替え
- * @param  {HTMLElement} element 対象の <a> 要素
- * @param  {String} url リンク先の URL 文字列
- * @return {Element}
- */
-function toogleLinkUrl(element, url) {
-  if (!element) {
-    throw new Error(`"element" arg is required. (from toogleLinkUrl)`);
-  }
-
-  if (url) {
-    element.setAttribute('href', url);
-    element.setAttribute('target', '_blank');
-    element.querySelector('.js-link--url-message').textContent = url;
-  }
-  else {
-    element.setAttribute('href', 'javascript:;');
-    element.removeAttribute('target');
-    element.querySelector('.js-link--url-message').textContent = '停止中';
-  }
-
-  return element;
-}
-
-/**
- * リンク表示の表示切り替え
- * @param  {HTMLElement} element 対象の <button> 要素
- * @param  {String} active Browsersync が起動中か否かの真偽値
- * @return {Element}
- */
-function toggleBtnLaunch(element, active) {
-  if (!element) {
-    throw new Error(`"element" arg is required. (from toggleBtnLaunch)`);
-  }
-
-  if (active) {
-    element.textContent = 'Browsersync を停止する';
-    element.classList.add('btn-negative');
-  }
-  else {
-    element.textContent = 'Browsersync を起動する';
-    element.classList.remove('btn-negative');
-  }
-
-  return element;
-}
-
-/**
- * フィールドの表示切り替え
- * @param  {Array} elements 対象のフィールド要素
- * @param  {String} active Browsersync が起動中か否かの真偽値
- * @return {Element}
- */
-function toggleFields(elements, active) {
-  if (!elements[0]) {
-    throw new Error(`"elements" arg is required. (from toggleFields)`);
-  }
-
-  elements.forEach((element) => {
-
-    if (active) {
-      element.disabled = 'disabled';
+    // 必要な要素がなければエラーを投げる
+    if (!fieldBaseDir) {
+      throw new Error(`enableSelectBaseDir: "fieldBaseDir" element is required.`);
     }
-    else {
-      element.disabled = '';
+
+    // fieldBaseDir クリック時の処理
+    this.fields.baseDir.addEventListener('click', (event) => {
+      ipc.send('open-file-dialog');
+    });
+
+    // ディレクトリが選択された時の処理
+    // baseDir 選択イベントを発生させる
+    ipc.on('selected-directory', (event, files) => {
+      this.emit(EVENT_SELECTED_BASE_DIR, files[0]);
+    });
+
+    return this;
+  }
+
+  /**
+   * ドラッグ＆ドロップでの baseDir 設定機能を有効にする
+   * @return {BrowsersyncLauncher}
+   */
+  enableDragDropBaseDir() {
+    const droppable = this.uis.droppable,
+          overlay = this.uis.overlay,
+          bs = this.bs;
+
+    // 必要な要素がなければエラーを投げる
+    if (!droppable || !overlay) {
+      throw new Error(`enableDragDropBaseDir: "droppable" and "overlay" elements are required.`);
     }
-  });
+
+    // 不要なイベントをキャンセル
+    droppable.addEventListener('dragenter', (event) => event.preventDefault());
+    droppable.addEventListener('dragend', (event) => event.preventDefault());
+
+    // ドラッグ開始時の処理
+    // オーバーレイを表示して、ドロップ可能な領域であることをフィードバックする
+    droppable.addEventListener('dragover', (event) => {
+      event.preventDefault();
+
+      // Brosersync 起動中の場合は何もしない
+      if (bs.active) {
+        return false;
+      }
+
+      // 現在のイベントの発生元がドロップ可能領域の場合、
+      // オーバーレイ表示する
+      if (event.currentTarget === droppable) {
+        overlay.classList.add('js-active');
+      }
+    });
+
+    // ドロップ領域を離れた時の処理
+    // オーバーレイを非表示にして、ドロップ可能な領域外であることをフィードバックする
+    droppable.addEventListener('dragleave', (event) => {
+      event.preventDefault();
+
+      // Brosersync 起動中の場合は何もしない
+      if (bs.active) {
+        return false;
+      }
+
+      // 現在のイベントの発生元がオーバーレイの場合、
+      // オーバーレイ非表示にする
+      if (event.target === overlay) {
+        overlay.classList.remove('js-active');
+      }
+    });
+
+    // ドロップ時の処理
+    // オーバーレイを非表示にして、ドロップされたオブジェクトを処理する
+    droppable.addEventListener('drop', (event) => {
+      event.preventDefault();
+
+      // Brosersync 起動中の場合は何もしない
+      if (bs.active) {
+        return false;
+      }
+
+      // オーバーレイ非表示にする
+      overlay.classList.remove('js-active');
+
+      // ファイルがない場合、
+      // ファイルがディレクトリではない場合は無視する
+      const files = event.dataTransfer.files;
+      if (!files || !files[0]) { return false; }
+      if (files[0].type !== '') { return false; }
+
+      // baseDir 選択イベントを発生させる
+      this.emit(EVENT_SELECTED_BASE_DIR, files[0].path);
+    });
+
+    return this;
+  }
+
+  /**
+   * 起動ボタンクリック時の処理。イベントハンドラとして設定される
+   * @return {BrowsersyncLauncher}
+   */
+  enableBtnLaunch() {
+    const bs = this.bs,
+          btnLaunch = this.uis.btnLaunch;
+
+    // 必要な要素がなければエラーを投げる
+    if (!btnLaunch) {
+      throw new Error(`enableBtnLaunch: "btnLaunch" element is required.`);
+    }
+
+    btnLaunch.addEventListener('click', (event) => {
+      const newOpts = Object.assign({}, BROWSER_SYNC_OPTIONS),
+            baseDir = escape(this.fields.baseDir.value),
+            files = escape(this.fields.files.value),
+            host = escape(this.fields.host.value),
+            port = parseInt(escape(this.fields.port.value), 10),
+            https = !!this.fields.https.checked,
+            ui = !!this.fields.ui.checked,
+            open = !!this.fields.open.checked;
+
+      // デフォルトイベントを抑制
+      event.preventDefault();
+
+      // オプションの調整
+      newOpts.server.baseDir = baseDir || newOpts.server.baseDir;
+      newOpts.host = host || newOpts.host;
+      newOpts.port = port || newOpts.port;
+      newOpts.https = https || newOpts.https;
+      newOpts.open = open || newOpts.open;
+
+      // オプションの調整
+      // 監視対象のファイルは、ドキュメントルート直下に指定する
+      newOpts.files = files ? `${newOpts.server.baseDir}/${files}` : newOpts.files;
+
+      // オプションの調整
+      // UI が有効な時はオプションを設定する
+      newOpts.ui = ui ? {port: newOpts.port + 1} : false;;
+
+      // Browsersync のインスタンスがアクティブの時は停止し、
+      // そうでない時は起動する
+      if (bs.active) {
+        bs.exit();
+        this.emit(EVENT_BS_END);
+      }
+      else {
+        bs.init(newOpts, (...args) => {
+          this.emit(EVENT_BS_START, newOpts, args);
+        });
+      }
+    });
+
+    return this;
+  }
 }
 
 /**
- * ドラッグ＆ドロップでの baseDir 設定機能を有効にする
- * @return {Void}
+ * モジュールのエクスポート
  */
-function enableDragDropBaseDir() {
-
-  // 不要なイベントをキャンセル
-  droppable.addEventListener('dragenter', (event) => event.preventDefault());
-  droppable.addEventListener('dragend', (event) => event.preventDefault());
-
-  // ドラッグ開始時の処理
-  // オーバーレイを表示して、ドロップ可能な領域であることをフィードバックする
-  droppable.addEventListener('dragover', (event) => {
-    event.preventDefault();
-
-    if (bs.active) { return false; }
-
-    if (event.currentTarget === droppable) {
-      overlay.style.zIndex = 10000;
-      overlay.style.opacity = 1;
-    }
-  });
-
-  // ドロップ領域を離れた時の処理
-  // オーバーレイを非表示にして、ドロップ可能な領域外であることをフィードバックする
-  droppable.addEventListener('dragleave', (event) => {
-    event.preventDefault();
-
-    if (bs.active) { return false; }
-
-    if (event.target === overlay) {
-      overlay.style.zIndex = 0;
-      overlay.style.opacity = 0;
-    }
-  });
-
-  // ドロップ時の処理
-  // オーバーレイを非表示にして、ドロップされたオブジェクトを処理する
-  droppable.addEventListener('drop', (event) => {
-    const files = event.dataTransfer.files;
-
-    event.preventDefault();
-
-    if (bs.active) { return false; }
-
-    overlay.style.zIndex = 0;
-    overlay.style.opacity = 0;
-
-    // ファイルがない場合、
-    // ファイルがディレクトリではない場合は無視する
-    if (!files || !files[0]) { return false; }
-    if (files[0].type !== '') { return false; }
-
-    fieldBaseDir.value = files[0].path;
-  })
-}
-
-/**
- * OS のファイル選択ダイアログでの baseDir 設定機能を有効にする
- * @return {Void}
- */
-function enableSelectBaseDir() {
-
-  // fieldBaseDir クリック時の処理
-  fieldBaseDir.addEventListener('click', (event) => {
-    ipc.send('open-file-dialog');
-  });
-
-  // ディレクトリが選択された時の処理
-  ipc.on('selected-directory', (event, files) => {
-    fieldBaseDir.value = files[0];
-  });
-}
+module.exports.BrowsersyncLauncher = BrowsersyncLauncher;
