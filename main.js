@@ -65,14 +65,18 @@ app.on('window-all-closed', () => {
 
 /**
  * ファイル選択ダイアログを開くイベントが発生した時の処理
- * OS のファイル選択ダイアログを開き、ディレクトリが選択されたら、
+ * OS のファイル選択ダイアログを開き、ディレクトリが選択、またキャンセルされたら、
  * renderer プロセスにイベントを送信する
  */
 ipcMain.on('open-file-dialog', (event) => {
 
   dialog.showOpenDialog({ properties: ['openDirectory'] }, (files) => {
+
     if (files) {
       event.sender.send('selected-directory', files);
+    }
+    else {
+      event.sender.send('cancel-select-directory');
     }
   });
 });

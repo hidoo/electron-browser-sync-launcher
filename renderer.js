@@ -208,6 +208,7 @@ class BrowsersyncLauncher extends EventEmitter {
    */
   enableSelectBaseDir() {
     const fieldBaseDir = this.fields.baseDir;
+    let isDialogOpen = false;
 
     // 必要な要素がなければエラーを投げる
     if (!fieldBaseDir) {
@@ -216,13 +217,22 @@ class BrowsersyncLauncher extends EventEmitter {
 
     // fieldBaseDir クリック時の処理
     this.fields.baseDir.addEventListener('click', (event) => {
-      ipcRenderer.send('open-file-dialog');
+      if (!isDialogOpen) {
+        isDialogOpen = true;
+        ipcRenderer.send('open-file-dialog');
+      }
     });
 
     // ディレクトリが選択された時の処理
     // baseDir 選択イベントを発生させる
     ipcRenderer.on('selected-directory', (event, files) => {
       this.emit(EVENT_SELECTED_BASE_DIR, files[0]);
+      isDialogOpen = false;
+    });
+
+    // ディレクトリが選択されなかった時の処理
+    ipcRenderer.on('cancel-select-directory', (event) => {
+      isDialogOpen = false;
     });
 
     return this;
