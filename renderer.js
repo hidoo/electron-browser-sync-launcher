@@ -81,7 +81,8 @@ class BrowsersyncLauncher extends EventEmitter {
     this.uis = {
       droppable: document.getElementById('js-droppable'),
       overlay: document.getElementById('js-overlay'),
-      btnLaunch: document.getElementById('js-btn--launch')
+      btnLaunch: document.getElementById('js-btn--launch'),
+      btnReset: document.getElementById('js-btn--reset')
     };
 
     // リンク要素
@@ -136,16 +137,18 @@ class BrowsersyncLauncher extends EventEmitter {
     });
 
     // Browsersync の起動終了時に発生するイベントを監視して
-    // フィールドの有効・無効を切り替える
+    // フィールド・リセットボタンの有効・無効を切り替える
     this.on(EVENT_BS_START, (newOpts) => {
       Object.keys(this.fields).forEach((key) => {
         this.fields[key].disabled = 'disabled';
       });
+      this.uis.btnReset.disabled = 'disabled';
     });
     this.on(EVENT_BS_END, () => {
       Object.keys(this.fields).forEach((key) => {
         this.fields[key].disabled = '';
       });
+      this.uis.btnReset.disabled = '';
     });
 
     // Browsersync の起動終了時に発生するイベントを監視して
@@ -197,6 +200,7 @@ class BrowsersyncLauncher extends EventEmitter {
      *
      * +++++++++++++ */
 
+    this.enableBtnReset();
     this.enableBtnLaunch();
     this.enableSelectBaseDir();
     this.enableDragDropBaseDir();
@@ -317,7 +321,7 @@ class BrowsersyncLauncher extends EventEmitter {
   }
 
   /**
-   * 起動ボタンクリック時の処理。イベントハンドラとして設定される
+   * 起動ボタンクリック時の処理。
    * @return {BrowsersyncLauncher}
    */
   enableBtnLaunch() {
@@ -339,6 +343,10 @@ class BrowsersyncLauncher extends EventEmitter {
             ui = !!this.fields.ui.checked,
             open = !!this.fields.open.checked ? 'external' : false;
 
+      // Object.assign ではディープコピーされないので
+      // 内部のオブジェクトについては個別にコピー
+      newOpts.server = Object.assign({}, BS_OPTIONS.server);
+
       // デフォルトイベントを抑制
       event.preventDefault();
 
@@ -351,7 +359,7 @@ class BrowsersyncLauncher extends EventEmitter {
 
       // オプションの調整
       // 監視対象のファイルは、ドキュメントルート直下に指定する
-      newOpts.files = path.resolve(files ? `${newOpts.server.baseDir}/${files}` : newOpts.files);
+      newOpts.files = path.resolve(path.join(newOpts.server.baseDir, files || newOpts.files));
 
       // オプションの調整
       // UI が有効な時はオプションを設定する
@@ -371,6 +379,27 @@ class BrowsersyncLauncher extends EventEmitter {
     });
 
     return this;
+  }
+
+  /**
+   * リセットボタンクリック時の処理。
+   * @return {BrowsersyncLauncher}
+   */
+  enableBtnReset() {
+    const bs = this.bs,
+          fields = this.fields,
+          btnReset = this.uis.btnReset;
+
+    // 必要な要素がなければエラーを投げる
+    if (!btnReset) {
+      throw new Error(`enableBtnReset: "btnReset" element is required.`);
+    }
+
+    btnReset.addEventListener('click', () => {
+
+      // localStorage の値をクリアの値をクリア
+      localStorage.removeItem(`${this.id}_config`);
+    });
   }
 
   /**
