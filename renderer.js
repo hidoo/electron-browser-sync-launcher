@@ -34,7 +34,7 @@ const BS_OPTIONS = {
     directory: true,
     index: 'index.html'
   },
-  files: '**/*.{html,css,js,png,jpg,jpeg,gif,svg}',
+  files: '**/*.*',
   host: getExternalIps()[0],
   port: 8000,
   https: false,
