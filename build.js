@@ -3,15 +3,16 @@
 /**
  * モジュールのロード
  */
-const packager = require('electron-packager'),
+const os = require('os'),
+      packager = require('electron-packager'),
       pkg = require('./package.json');
 
 packager({
 
-  name: 'Browsersync Launcher',
+  name: 'BrowsersyncLauncher',
   dir: './',
   out: './dist',
-  platform: 'darwin',
+  platform: os.platform(), // プラットフォームごとのアプリをビルド
   arch: 'x64',
   version: '1.3.2',
   overwrite: true,

@@ -1,6 +1,6 @@
 {
   "name": "electron-browser-sync-launcher",
-  "productName": "ElectronBrowsersyncLauncher",
+  "productName": "BrowsersyncLauncher",
   "version": "0.0.0",
   "description": "Browsersync Launcher GUI by Electron.",
   "main": "main.js",
