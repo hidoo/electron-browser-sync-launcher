@@ -4,6 +4,7 @@
  * モジュールのロード
  */
 const os = require('os'),
+      path = require('path'),
       ipc = require('electron').ipcRenderer,
       EventEmitter = require('events').EventEmitter,
       browsersync = require('browser-sync'),
@@ -332,7 +333,7 @@ class BrowsersyncLauncher extends EventEmitter {
       event.preventDefault();
 
       // オプションの調整
-      newOpts.server.baseDir = baseDir || newOpts.server.baseDir;
+      newOpts.server.baseDir = path.resolve(baseDir || newOpts.server.baseDir);
       newOpts.host = host || newOpts.host;
       newOpts.port = port || newOpts.port;
       newOpts.https = https || newOpts.https;
@@ -340,7 +341,7 @@ class BrowsersyncLauncher extends EventEmitter {
 
       // オプションの調整
       // 監視対象のファイルは、ドキュメントルート直下に指定する
-      newOpts.files = files ? `${newOpts.server.baseDir}/${files}` : newOpts.files;
+      newOpts.files = path.resolve(files ? `${newOpts.server.baseDir}/${files}` : newOpts.files);
 
       // オプションの調整
       // UI が有効な時はオプションを設定する
