@@ -11,7 +11,7 @@ const electron = require('electron'),
       BrowserWindow = electron.BrowserWindow;
 
 /**
- * Electron のデバッグツールの使用の使用
+ * Electron のデバッグツールの使用
  */
 // require('electron-debug')();
 
@@ -30,6 +30,7 @@ function createMainWindow() {
   // index.htmlを表示
   mainWindow.loadURL(`file://${__dirname}/index.html`);
 
+  // アプリ内部からブラウザへのリンクを開く
   mainWindow.webContents.on('new-window', (event, url) => {
     event.preventDefault();
     shell.openExternal(url);
