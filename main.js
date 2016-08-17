@@ -3,12 +3,7 @@
 /**
  * Electron のモジュールの読み込み
  */
-const electron = require('electron'),
-      shell = electron.shell,
-      app = electron.app,
-      ipc = electron.ipcMain,
-      dialog = electron.dialog,
-      BrowserWindow = electron.BrowserWindow;
+const { shell, app, ipcMain, dialog, BrowserWindow } = require('electron');
 
 /**
  * Electron のデバッグツールの使用
@@ -73,7 +68,7 @@ app.on('window-all-closed', () => {
  * OS のファイル選択ダイアログを開き、ディレクトリが選択されたら、
  * renderer プロセスにイベントを送信する
  */
-ipc.on('open-file-dialog', (event) => {
+ipcMain.on('open-file-dialog', (event) => {
 
   dialog.showOpenDialog({ properties: ['openDirectory'] }, (files) => {
     if (files) {

@@ -5,8 +5,8 @@
  */
 const os = require('os'),
       path = require('path'),
-      ipc = require('electron').ipcRenderer,
-      EventEmitter = require('events').EventEmitter,
+      { EventEmitter } = require('events'),
+      { ipcRenderer } = require('electron'),
       browsersync = require('browser-sync'),
       escape = require('escape-html');
 
@@ -216,12 +216,12 @@ class BrowsersyncLauncher extends EventEmitter {
 
     // fieldBaseDir クリック時の処理
     this.fields.baseDir.addEventListener('click', (event) => {
-      ipc.send('open-file-dialog');
+      ipcRenderer.send('open-file-dialog');
     });
 
     // ディレクトリが選択された時の処理
     // baseDir 選択イベントを発生させる
-    ipc.on('selected-directory', (event, files) => {
+    ipcRenderer.on('selected-directory', (event, files) => {
       this.emit(EVENT_SELECTED_BASE_DIR, files[0]);
     });
 
