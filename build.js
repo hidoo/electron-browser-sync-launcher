@@ -18,8 +18,8 @@ packager({
   asar: false,
 
   // アプリのバージョン、コピーライト
-  'app-version': pkg['version'],
-  'app-copyright': `Copyright (C) ${pkg['author']}`
+  'app-version': pkg.version,
+  'app-copyright': `Copyright (C) ${pkg.author.name}`
 
 }, (err, appPaths) => {// 完了時のコールバック
     if (err) {
