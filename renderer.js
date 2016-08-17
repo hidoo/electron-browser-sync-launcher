@@ -35,7 +35,7 @@ const BS_OPTIONS = {
     index: 'index.html'
   },
   files: '**/*.{html,css,js,png,jpg,jpeg,gif,svg}',
-  host: '0.0.0.0',
+  host: getExternalIps()[0],
   port: 8000,
   https: false,
   ui: false,
@@ -327,7 +327,7 @@ class BrowsersyncLauncher extends EventEmitter {
             port = parseInt(escape(this.fields.port.value), 10),
             https = !!this.fields.https.checked,
             ui = !!this.fields.ui.checked,
-            open = !!this.fields.open.checked;
+            open = !!this.fields.open.checked ? 'external' : false;
 
       // デフォルトイベントを抑制
       event.preventDefault();
@@ -345,7 +345,7 @@ class BrowsersyncLauncher extends EventEmitter {
 
       // オプションの調整
       // UI が有効な時はオプションを設定する
-      newOpts.ui = ui ? {port: newOpts.port + 1} : false;;
+      newOpts.ui = ui ? {port: newOpts.port + 1} : false;
 
       // Browsersync のインスタンスがアクティブの時は停止し、
       // そうでない時は起動する
@@ -387,6 +387,41 @@ class BrowsersyncLauncher extends EventEmitter {
 
     return this;
   }
+}
+
+/**
+ * 端末の公開 IP アドレスを取得する。
+ * @return {Array}
+ */
+function getExternalIps() {
+  const ifaces = os.networkInterfaces(),
+        ips = [];
+
+  // ネットワークインターフェースの値から必要な値を取り出す
+  Object.keys(ifaces).forEach((key) => {
+    ifaces[key].forEach((iface) => {
+
+      // 内部 IP は除外
+      if (iface.internal) {
+        return;
+      }
+
+      // 内部 IPv6 は除外
+      if (iface.family === 'IPv6') {
+        return;
+      }
+
+      // アドレスを格納
+      ips.push(iface.address);
+    });
+  });
+
+  // 値が返ってこなかった場合は 0.0.0.0 を優先で使用する
+  if (!ips[0]) {
+    ips.push('0.0.0.0');
+  }
+
+  return ips;
 }
 
 /**
