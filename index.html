@@ -29,7 +29,7 @@
         opacity: 0;
       }
       .overlay.js-active {
-        z-index: 10000;
+        z-index: 10005;
         opacity: 1;
       }
       .overlay__message {
@@ -50,6 +50,83 @@
         display: block;
         padding-top: 10px;
         text-align: center;
+      }
+
+      /**
+       * ライセンス表記
+       */
+      .license-info-link {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 10001;
+        font-size: 20px;
+      }
+      .license-info-link:hover ,
+      .license-info-link:focus {
+        color: #999;
+      }
+      .license-info {
+        position: absolute;
+        top: 20px;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        z-index: 0;
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: rgba(0, 0, 0, 0.2) 0 2px 15px;
+        opacity: 0;
+        transform: scale(0);
+        transition-timing-function: ease-in-out;
+        transition-duration: 0.2s;
+        transition-property: opacity, z-index, transform;
+      }
+      .license-info.js-active {
+        z-index: 10005;
+        opacity: 1;
+        transform: scale(1);
+      }
+      .license-info__close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 20px;
+        height: 20px;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 20px;
+      }
+      .license-info__close::before {
+        vertical-align: top;
+      }
+      .license-info__close:hover ,
+      .license-info__close:focus {
+        color: #999;
+      }
+      .license-info__body {
+        overflow: auto;
+        height: 100%;
+        font-size: 12px;
+      }
+      .license-info__body > h1 {
+        margin: 0;
+        font-size: 1.8rem;
+      }
+      .license-info__body > h2 {
+        margin: 0;
+        font-size: 1.4rem;
+      }
+      .license-info__body > ul {
+        margin: 0;
+      }
+      .license-info__body > ul li {
+        font-size: 0.8rem;
+      }
+      .license-info__body a {
+        color: #09c;
       }
 
       /**
@@ -80,11 +157,23 @@
     -->
     <div class="window" id="js-droppable">
 
+      <!--
+        オーバーレイ
+      -->
       <div class="overlay" id="js-overlay">
         <p class="overlay__message">
           <span class="overlay__message__icon  icon  icon-folder"></span>
           <span class="overlay__message__text">ここに Browsersync で表示するプロジェクトの<br />ディレクトリをドロップ</span>
         </p>
+      </div>
+
+      <!--
+        ライセンス表記
+      -->
+      <span class="license-info-link  icon icon-info-circled" id="js-license-info-link"></span>
+      <div class="license-info" id="js-license-info">
+        <div class="license-info__body" id="js-license-info-body"></div>
+        <span class="license-info__close  icon icon-cancel icon-close-tab" id="js-license-info-close"></span>
       </div>
 
       <div class="window-content">

@@ -8,13 +8,17 @@ const os = require('os'),
       { EventEmitter } = require('events'),
       { ipcRenderer } = require('electron'),
       browsersync = require('browser-sync'),
-      escape = require('escape-html');
+      escape = require('escape-html'),
+      marked = require('marked');
 
 /**
  * 定数：イベント
  * @type {String}
  */
 const EVENT_SELECTED_BASE_DIR = 'selected-base-dir';
+const EVENT_OPEN_LICENSE = 'open-license';
+const EVENT_OPEN_LICENSE_ERROR = 'open-license-error';
+const EVENT_OPEN_LICENSE_SUCCESS = 'open-license-success';
 const EVENT_BS_START = 'bs-start';
 const EVENT_BS_END = 'bs-end';
 
@@ -82,7 +86,11 @@ class BrowsersyncLauncher extends EventEmitter {
       droppable: document.getElementById('js-droppable'),
       overlay: document.getElementById('js-overlay'),
       btnLaunch: document.getElementById('js-btn--launch'),
-      btnReset: document.getElementById('js-btn--reset')
+      btnReset: document.getElementById('js-btn--reset'),
+      licenseInfo: document.getElementById('js-license-info'),
+      licenseInfoLink: document.getElementById('js-license-info-link'),
+      licenseInfoClose: document.getElementById('js-license-info-close'),
+      licenseInfoBody: document.getElementById('js-license-info-body')
     };
 
     // リンク要素
@@ -204,6 +212,7 @@ class BrowsersyncLauncher extends EventEmitter {
     this.enableBtnLaunch();
     this.enableSelectBaseDir();
     this.enableDragDropBaseDir();
+    this.enableLicenseInfo();
   }
 
   /**
@@ -426,6 +435,59 @@ class BrowsersyncLauncher extends EventEmitter {
 
     return this;
   }
+
+  /**
+   * ライセンス表示機能を有効にする
+   * @return {BrowsersyncLauncher}
+   */
+  enableLicenseInfo() {
+    const renderer = new marked.Renderer(),
+          licenseInfo = this.uis.licenseInfo,
+          licenseInfoLink = this.uis.licenseInfoLink,
+          licenseInfoClose = this.uis.licenseInfoClose,
+          licenseInfoBody = this.uis.licenseInfoBody;
+    let isLoaded = false;
+
+    // 必要な要素がなければエラーを投げる
+    if (!licenseInfo || !licenseInfoLink || !licenseInfoClose || !licenseInfoBody) {
+      throw new Error(`enableLicenseInfo: "licenseInfo" "licenseInfoLink" "licenseInfoClose" and "licenseInfoBody" elements are required.`);
+    }
+
+    // marked の renderer を拡張して、
+    // リンクはすべて target="_blank" で開くように設定
+    renderer.link = (href, title, text) => {
+      return `<a href="${ href }" title="${ title }" target="_blank">${ text }</a>`
+    };
+
+    // LICENSE.md の読み込みに成功した場合の処理
+    licenseInfoLink.addEventListener('click', () => {
+
+      if (!isLoaded) {
+        ipcRenderer.send(EVENT_OPEN_LICENSE);
+      }
+
+      licenseInfo.classList.add('js-active');
+    });
+
+    licenseInfoClose.addEventListener('click', () => {
+      licenseInfo.classList.remove('js-active');
+    });
+
+    // LICENSE.md の読み込みに成功した場合の処理
+    // ライセンス表記エリアに表示し、読み込みフラグを有効にする
+    ipcRenderer.on(EVENT_OPEN_LICENSE_SUCCESS, (event, data) => {
+      licenseInfoBody.innerHTML = marked(data, { renderer: renderer });
+      isLoaded = true;
+    });
+
+    // LICENSE.md の読み込みに失敗した場合の処理
+    ipcRenderer.on(EVENT_OPEN_LICENSE_ERROR, (event, data) => {
+      licenseInfoBody.innerHTML = marked(`LICENSE.md is not loaded.`);
+    });
+
+    return this;
+  }
+
 }
 
 /**

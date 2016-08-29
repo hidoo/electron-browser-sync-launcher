@@ -3,7 +3,8 @@
 /**
  * Electron のモジュールの読み込み
  */
-const { shell, app, ipcMain, dialog, BrowserWindow } = require('electron');
+const { shell, app, ipcMain, dialog, BrowserWindow } = require('electron'),
+      fs = require('fs');
 
 /**
  * Electron のデバッグツールの使用
@@ -77,6 +78,23 @@ ipcMain.on('open-file-dialog', (event) => {
     }
     else {
       event.sender.send('cancel-select-directory');
+    }
+  });
+});
+
+/**
+ * ライセンス表示を開くイベントが発生した時の処理
+ * OS のファイル選択ダイアログを開き、ディレクトリが選択、またキャンセルされたら、
+ * renderer プロセスにイベントを送信する
+ */
+ipcMain.on('open-license', (event) => {
+
+  fs.readFile(`${__dirname}/LICENSE.md`, 'utf8', (error, data) => {
+    if (error) {
+      event.sender.send('open-license-error');
+    }
+    else {
+      event.sender.send('open-license-success', data);
     }
   });
 });
