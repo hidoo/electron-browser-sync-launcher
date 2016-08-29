@@ -4,7 +4,8 @@
  * Electron のモジュールの読み込み
  */
 const { shell, app, ipcMain, dialog, BrowserWindow } = require('electron'),
-      fs = require('fs');
+      fs = require('fs'),
+      events = require('./events');
 
 /**
  * Electron のデバッグツールの使用
@@ -69,15 +70,15 @@ app.on('window-all-closed', () => {
  * OS のファイル選択ダイアログを開き、ディレクトリが選択、またキャンセルされたら、
  * renderer プロセスにイベントを送信する
  */
-ipcMain.on('open-file-dialog', (event) => {
+ipcMain.on(events.OPEN_FILE_DIALOG, (event) => {
 
   dialog.showOpenDialog({ properties: ['openDirectory'] }, (files) => {
 
     if (files) {
-      event.sender.send('selected-directory', files);
+      event.sender.send(events.SELECTED_DIR, files);
     }
     else {
-      event.sender.send('cancel-select-directory');
+      event.sender.send(events.CANCEL_SELECT_DIR);
     }
   });
 });
@@ -87,14 +88,14 @@ ipcMain.on('open-file-dialog', (event) => {
  * OS のファイル選択ダイアログを開き、ディレクトリが選択、またキャンセルされたら、
  * renderer プロセスにイベントを送信する
  */
-ipcMain.on('open-license', (event) => {
+ipcMain.on(events.OPEN_LICENSE, (event) => {
 
   fs.readFile(`${__dirname}/LICENSE.md`, 'utf8', (error, data) => {
     if (error) {
-      event.sender.send('open-license-error');
+      event.sender.send(events.OPEN_LICENSE_ERROR);
     }
     else {
-      event.sender.send('open-license-success', data);
+      event.sender.send(events.OPEN_LICENSE_SUCCESS, data);
     }
   });
 });

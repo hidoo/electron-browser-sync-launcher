@@ -9,18 +9,8 @@ const os = require('os'),
       { ipcRenderer } = require('electron'),
       browsersync = require('browser-sync'),
       escape = require('escape-html'),
-      marked = require('marked');
-
-/**
- * 定数：イベント
- * @type {String}
- */
-const EVENT_SELECTED_BASE_DIR = 'selected-base-dir';
-const EVENT_OPEN_LICENSE = 'open-license';
-const EVENT_OPEN_LICENSE_ERROR = 'open-license-error';
-const EVENT_OPEN_LICENSE_SUCCESS = 'open-license-success';
-const EVENT_BS_START = 'bs-start';
-const EVENT_BS_END = 'bs-end';
+      marked = require('marked'),
+      events = require('./events');
 
 /**
  * 定数：UI
@@ -128,7 +118,7 @@ class BrowsersyncLauncher extends EventEmitter {
 
     // baseDir が選択された際に発生するイベントを監視して
     // フィールドの値を更新する
-    this.on(EVENT_SELECTED_BASE_DIR, (path) => {
+    this.on(events.SELECTED_BASE_DIR, (path) => {
       if (path) {
         this.fields.baseDir.value = path;
       }
@@ -136,7 +126,7 @@ class BrowsersyncLauncher extends EventEmitter {
 
     // Browsersync の起動時に発生するイベントを監視して
     // フィールドの値を localStorage に保存する
-    this.on(EVENT_BS_START, (newOpts) => {
+    this.on(events.BS_START, (newOpts) => {
       const newOptsCache = Object.assign({}, newOpts);
 
       // newOpts.files は baseDir と連結しているので、その部分を除去して保存する
@@ -146,13 +136,13 @@ class BrowsersyncLauncher extends EventEmitter {
 
     // Browsersync の起動終了時に発生するイベントを監視して
     // フィールド・リセットボタンの有効・無効を切り替える
-    this.on(EVENT_BS_START, (newOpts) => {
+    this.on(events.BS_START, (newOpts) => {
       Object.keys(this.fields).forEach((key) => {
         this.fields[key].disabled = 'disabled';
       });
       this.uis.btnReset.disabled = 'disabled';
     });
-    this.on(EVENT_BS_END, () => {
+    this.on(events.BS_END, () => {
       Object.keys(this.fields).forEach((key) => {
         this.fields[key].disabled = '';
       });
@@ -164,7 +154,7 @@ class BrowsersyncLauncher extends EventEmitter {
     Object.keys(this.links).forEach((key) => {
       const element = this.links[key];
 
-      this.on(EVENT_BS_START, (newOpts) => {
+      this.on(events.BS_START, (newOpts) => {
         const host = key === 'external' ? newOpts.host : 'localhost',
               port = newOpts.port,
               protocol = newOpts.https ? 'https' : 'http';
@@ -184,7 +174,7 @@ class BrowsersyncLauncher extends EventEmitter {
         element.setAttribute('target', '_blank');
         element.querySelector('.js-link--url-message').textContent = url;
       });
-      this.on(EVENT_BS_END, () => {
+      this.on(events.BS_END, () => {
         element.setAttribute('href', 'javascript:;');
         element.removeAttribute('target');
         element.querySelector('.js-link--url-message').textContent = UI_LABEL_LINK_STOP;
@@ -193,11 +183,11 @@ class BrowsersyncLauncher extends EventEmitter {
 
     // Browsersync の起動終了時に発生するイベントを監視して
     // ボタンの有効・無効を切り替える
-    this.on(EVENT_BS_START, (newOpts) => {
+    this.on(events.BS_START, (newOpts) => {
       this.uis.btnLaunch.textContent = UI_LABEL_BTN_LAUNCH_END;
       this.uis.btnLaunch.classList.add('btn-negative');
     });
-    this.on(EVENT_BS_END, () => {
+    this.on(events.BS_END, () => {
       this.uis.btnLaunch.textContent = UI_LABEL_BTN_LAUNCH_START;
       this.uis.btnLaunch.classList.remove('btn-negative');
     });
@@ -229,22 +219,22 @@ class BrowsersyncLauncher extends EventEmitter {
     }
 
     // fieldBaseDir クリック時の処理
-    this.fields.baseDir.addEventListener('click', (event) => {
+    fieldBaseDir.addEventListener('click', (event) => {
       if (!isDialogOpen) {
         isDialogOpen = true;
-        ipcRenderer.send('open-file-dialog');
+        ipcRenderer.send(events.OPEN_FILE_DIALOG);
       }
     });
 
     // ディレクトリが選択された時の処理
     // baseDir 選択イベントを発生させる
-    ipcRenderer.on('selected-directory', (event, files) => {
-      this.emit(EVENT_SELECTED_BASE_DIR, files[0]);
+    ipcRenderer.on(events.SELECTED_DIR, (event, files) => {
+      this.emit(events.SELECTED_BASE_DIR, files[0]);
       isDialogOpen = false;
     });
 
     // ディレクトリが選択されなかった時の処理
-    ipcRenderer.on('cancel-select-directory', (event) => {
+    ipcRenderer.on(events.CANCEL_SELECT_DIR, (event) => {
       isDialogOpen = false;
     });
 
@@ -323,7 +313,7 @@ class BrowsersyncLauncher extends EventEmitter {
       if (files[0].type !== '') { return false; }
 
       // baseDir 選択イベントを発生させる
-      this.emit(EVENT_SELECTED_BASE_DIR, files[0].path);
+      this.emit(events.SELECTED_BASE_DIR, files[0].path);
     });
 
     return this;
@@ -378,11 +368,11 @@ class BrowsersyncLauncher extends EventEmitter {
       // そうでない時は起動する
       if (bs.active) {
         bs.exit();
-        this.emit(EVENT_BS_END);
+        this.emit(events.BS_END);
       }
       else {
         bs.init(newOpts, (...args) => {
-          this.emit(EVENT_BS_START, newOpts, args);
+          this.emit(events.BS_START, newOpts, args);
         });
       }
     });
@@ -463,7 +453,7 @@ class BrowsersyncLauncher extends EventEmitter {
     licenseInfoLink.addEventListener('click', () => {
 
       if (!isLoaded) {
-        ipcRenderer.send(EVENT_OPEN_LICENSE);
+        ipcRenderer.send(events.OPEN_LICENSE);
       }
 
       licenseInfo.classList.add('js-active');
@@ -475,13 +465,13 @@ class BrowsersyncLauncher extends EventEmitter {
 
     // LICENSE.md の読み込みに成功した場合の処理
     // ライセンス表記エリアに表示し、読み込みフラグを有効にする
-    ipcRenderer.on(EVENT_OPEN_LICENSE_SUCCESS, (event, data) => {
+    ipcRenderer.on(events.OPEN_LICENSE_SUCCESS, (event, data) => {
       licenseInfoBody.innerHTML = marked(data, { renderer: renderer });
       isLoaded = true;
     });
 
     // LICENSE.md の読み込みに失敗した場合の処理
-    ipcRenderer.on(EVENT_OPEN_LICENSE_ERROR, (event, data) => {
+    ipcRenderer.on(events.OPEN_LICENSE_ERROR, (event, data) => {
       licenseInfoBody.innerHTML = marked(`LICENSE.md is not loaded.`);
     });
 
